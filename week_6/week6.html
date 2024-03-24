@@ -31,24 +31,18 @@
  */
 
 class CustomIterator {
-    constructor(data, current) {
-        this.data = data;
-        this.currentIndex = this.data.findIndex(obj => obj === current);
+    constructor(list, current) {
+        this.list = list;
+        this.currentIndex = this.list.findIndex(current);
         this.current = current;
     }
 
     prev() {
         if (this.currentIndex > 0) {
             this.currentIndex--;
-            this.current = this.data[this.currentIndex];
+            this.current = this.list.at(this.currentIndex);
         } else {
             this.current = null;
-        }
-    }
-
-    delete() {
-        if (this.currentIndex >= 0 && this.currentIndex < this.data.length) {
-            this.data.splice(this.currentIndex, 1);
         }
     }
 }
@@ -58,7 +52,7 @@ class CustomList {
         this._data = [];
     }
 
-    addFront(item) {
+    push(item) {
         this._data.unshift(item);
     }
 
@@ -66,8 +60,23 @@ class CustomList {
         return this._data[this._data.length - 1];
     }
 
+    findIndex(obj) {
+        return this._data.findIndex(item => item === obj);
+    }
+
+    at(index) {
+        return this._data[index];
+    }
+
     getIterator(current) {
-        return new CustomIterator(this._data, current);
+        return new CustomIterator(this, current);
+    }
+
+    remove(item) {
+        const index = this._data.findIndex(obj => obj === item);
+        if (index >= 0) {
+            this._data.splice(index, 1);
+        }
     }
 
     get length() {
@@ -88,7 +97,7 @@ class BlockRow {
 
     initBlocks(numBlocks) {
         for (let i = 0; i < numBlocks; i++) {
-            this.blocks.addFront(this.createBlock(i * this.blockWidth));
+            this.blocks.push(this.createBlock(i * this.blockWidth));
         }
     }
 
@@ -116,8 +125,8 @@ class BlockRow {
 
         while (iterator.current) {
             if (index === deleteIndex) {
-                iterator.delete();
-                this.blocks.addFront(this.createBlock(0));
+                this.blocks.remove(iterator.current);
+                this.blocks.push(this.createBlock(0));
             }
 
             let block = iterator.current;
