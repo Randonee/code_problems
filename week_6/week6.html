@@ -33,14 +33,14 @@
 class CustomIterator {
     constructor(list, current) {
         this.list = list;
-        this.currentIndex = this.list.findIndex(current);
+        this.index = this.list.findIndex(current);
         this.current = current;
     }
 
     prev() {
-        if (this.currentIndex > 0) {
-            this.currentIndex--;
-            this.current = this.list.at(this.currentIndex);
+        if (this.index > 0) {
+            this.index--;
+            this.current = this.list.at(this.index);
         } else {
             this.current = null;
         }
@@ -52,7 +52,7 @@ class CustomList {
         this._data = [];
     }
 
-    push(item) {
+    unshift(item) {
         this._data.unshift(item);
     }
 
@@ -97,7 +97,7 @@ class BlockRow {
 
     initBlocks(numBlocks) {
         for (let i = 0; i < numBlocks; i++) {
-            this.blocks.push(this.createBlock(i * this.blockWidth));
+            this.blocks.unshift(this.createBlock(i * this.blockWidth));
         }
     }
 
@@ -121,21 +121,17 @@ class BlockRow {
         const deleteIndex = Math.floor(Math.random() * this.numBlocks);
 
         let iterator = this.blocks.getIterator(this.blocks.last);
-        let index = this.blocks.length - 1;
 
         while (iterator.current) {
-            if (index === deleteIndex) {
+            if (iterator.index === deleteIndex) {
                 this.blocks.remove(iterator.current);
-                this.blocks.push(this.createBlock(0));
+                this.blocks.unshift(this.createBlock(0));
             }
 
-            let block = iterator.current;
+            iterator.current.x = iterator.index * this.blockWidth;
+            this.ctx.fillStyle = iterator.current.color;
+            this.ctx.fillRect(iterator.current.x, iterator.current.y, this.blockWidth, this.blockHeight);
 
-            block.x = index * this.blockWidth;
-            this.ctx.fillStyle = block.color;
-            this.ctx.fillRect(block.x, block.y, this.blockWidth, this.blockHeight);
-
-            index--;
             iterator.prev();
         }
     }
