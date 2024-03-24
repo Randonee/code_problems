@@ -1,0 +1,91 @@
+<html>
+<head>
+<title>Stars</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
+#starCanvas {
+    position: absolute;
+    left: -1000px;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<canvas id="starCanvas"></canvas>
+<script>
+
+const canvas = document.getElementById('stars');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const starCanvas = document.getElementById('starCanvas');
+const starSize = 1000
+starCanvas.width = starSize;
+starCanvas.height = starSize;
+
+const ctx = canvas.getContext('2d');
+  
+// *** Make one star taht will be copied to make other stars ***
+const starCtx = starCanvas.getContext('2d');
+const centerX = starCanvas.width / 2;
+const centerY = starCanvas.height / 2;
+const radius = centerX - 100;
+
+starCtx.filter = "blur(200px)";
+starCtx.beginPath();
+starCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+starCtx.fillStyle = '#FFFFFF';
+starCtx.fill();
+starCtx.lineWidth = 1;
+starCtx.strokeStyle = '#FFFFFF';
+starCtx.stroke();
+
+starImage = new Image();
+starImage.src = starCanvas.toDataURL("image/png");
+// ************************************************************
+
+// ** Sets new position and size of a star
+const sizeNum = 4;
+function updateStar(star) {
+	star.x = canvas.width + 20;
+	star.y = Math.random() * canvas.height;
+	star.r = Math.round(sizeNum / Math.pow(Math.random()*10, .9));
+	star.v = (star.r/3) * .8;
+	return star;
+}
+
+// Create stars all over the window 
+const numStars = canvas.width * canvas.height / 500;
+const stars = [];
+for(var i=0; i < numStars; ++i) {
+	const star = updateStar({});
+	star.x = Math.random() * canvas.width,
+	stars.push(star);
+}
+
+
+// update position of stars
+const loop = () => {
+	ctx.fillStyle = "black";
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	for(var i=0; i < stars.length; ++i) {
+		if(stars[i].x < 20)
+			updateStar(stars[i]);
+		else
+			stars[i].x -= stars[i].v;
+		
+		ctx.drawImage(starImage, stars[i].x, stars[i].y, stars[i].r, stars[i].r);
+	}
+}
+
+setInterval(loop, 0);
+
+</script>
+</body>
+</html>
