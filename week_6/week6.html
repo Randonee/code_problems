@@ -117,7 +117,7 @@ class BlockRow {
         return color;
     }
 
-    updateAndDraw() {
+    render() {
         const deleteIndex = Math.floor(Math.random() * this.numBlocks);
 
         let iterator = this.blocks.getIterator(this.blocks.last);
@@ -137,6 +137,31 @@ class BlockRow {
     }
 }
 
+class FPSCounter {
+    constructor(ctx) {
+        this.ctx = ctx;
+        this.fps = 0;
+        this.framesThisSecond = 0;
+        this.lastFpsUpdate = Date.now();
+    }
+
+    update() {
+        this.framesThisSecond++;
+        const now = Date.now();
+        if (now - this.lastFpsUpdate >= 1000) {
+            this.fps = this.framesThisSecond;
+            this.framesThisSecond = 0;
+            this.lastFpsUpdate = now;
+        }
+    }
+
+    render() {
+        this.update();
+        this.ctx.fillStyle = "black";
+        this.ctx.fillText(`FPS: ${this.fps}`, 10, 10);
+    }
+}
+
 const numRows = 500;
 const canvas = document.getElementById('canvas');
 canvas.width = window.innerWidth;
@@ -153,31 +178,16 @@ for (let i = 0; i < numRows; i++) {
     rows.push(new BlockRow(ctx, i * (blockHeight + 1) + headerHeight, numBlocksPerRow, blockWidth, blockHeight));
 }
 
-let lastFrameTime = Date.now();
-let fps = 0;
-let framesThisSecond = 0;
-let lastFpsUpdate = Date.now();
+const fpsCounter = new FPSCounter(ctx);
 
-function animate() {
-    const now = Date.now();
-    const deltaTime = now - lastFrameTime;
-    framesThisSecond++;
-    lastFrameTime = now;
 
-    if (now - lastFpsUpdate >= 1000) {
-        fps = framesThisSecond;
-        framesThisSecond = 0;
-        lastFpsUpdate = now;
-    }
-
+function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "black";
-    ctx.fillText(`FPS: ${fps}`, 10, headerHeight - 5);
-    rows.forEach(row => row.updateAndDraw());
-    setTimeout(animate, 0);
+    fpsCounter.render();
+    rows.forEach(row => row.render());
 }
 
-animate();
+setInterval(loop, 0);
 </script>
 </body>
 </html>
