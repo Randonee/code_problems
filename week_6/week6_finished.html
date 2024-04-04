@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Linked Lists</title>
+    <style>
+        body { margin: 0px; }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+/**
+ * Project: Implement Linked List Animation in JavaScript
+ *
+ * This code makes multiple rows of color blocks. Each row contains 100 blocks. Whenever a
+ * block is removed from a row, a new block is added to the beginning of the row. This happens
+ * every render loop.
+ *
+ * Objective:
+ * - Refactor `CustomIterator` and `CustomList` to use a custom linked list, not an array.
+ *
+ * Rules:
+ * - Only change code within `CustomIterator` and `CustomList`.
+ * - Develop your linked list; no external libraries.
+ * - Learn about linked lists from non-JavaScript resources; avoid direct code examples.
+ * - No importing external packages.
+ *
+ * Tasks:
+ * - Implement a linked list for block storage in `CustomList`.
+ * - Adjust `CustomIterator` for navigating the linked list, including node deletion.
+ */
+
+class CustomIterator {
+    constructor(list, currentItem) {
+        this.list = list;
+        this.index = this.list.findIndex(currentItem.data);
+        this.currentItem = currentItem;
+        this.current = currentItem.data;
+    }
+
+    prev() {
+    	if(this.currentItem) {
+    		--this.index;
+    		this.currentItem = this.currentItem.prev;
+        	this.current = this.currentItem?.data;
+    	}
+    }
+}
+
+class CustomList {
+    constructor() {
+        this.first = null;
+        this.end = null;
+        this.count = 0;
+        this.freeItem = null;
+    }
+
+    unshift(data) {
+    	
+    	const item = this.freeItem ? this.freeItem : {};
+    
+    	if(!this.first) {
+    		item.data = data;
+    		item.prev = null;
+    		item.next = null;
+    		this.first = this.end = item;
+    	}
+    	else {
+    		item.data = data;
+    		item.prev = null;
+    		item.next = this.first;
+    		
+    		this.first.prev = item;
+    		this.first = item
+    	}
+       ++this.count;
+    }
+
+    get last() {
+        this.end;
+    }
+
+    findIndex(data) {
+		let index = this.count;
+		let current = this.end;
+		
+		while(current && current.data != data) {
+			current = current.prev;
+       		--index;
+       }
+       
+       if(!current) return -1;
+       
+       return index;
+    }
+
+    at(index) {
+    	
+    }
+
+    getIterator(current) {
+        return new CustomIterator(this, this.end);
+    }
+
+    remove(item) {
+    	if(item.prev) item.prev.next = item.next;
+    	if(item.next) item.next.prev = item.prev;
+    	
+    	if(item == this.first) {
+    		this.first = item.next;
+    		this.first.prev = null;
+    	}
+    	if(item == this.end) {
+    		this.end = item.prev;
+    		this.end.next = null;
+    	}
+    	
+    	this.freeitem = item;
+    	
+    	--this.count;
+    }
+
+    get length() {
+       	return this.count;
+    }
+}
+
+class BlockRow {
+    constructor(ctx, y, numBlocks, blockWidth, blockHeight) {
+        this.ctx = ctx;
+        this.y = y;
+        this.numBlocks = numBlocks;
+        this.blockWidth = blockWidth;
+        this.blockHeight = blockHeight;
+        this.blocks = new CustomList();
+        this.initBlocks(numBlocks);
+    }
+
+    initBlocks(numBlocks) {
+        for (let i = 0; i < numBlocks; i++) {
+            this.blocks.unshift(this.createBlock(i * this.blockWidth));
+        }
+    }
+
+    createBlock(x) {
+        return {
+            x: x,
+            y: this.y,
+            color: this.getRandomColor()
+        };
+    }
+
+    getRandomColor() {
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += '0123456789ABCDEF'[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    render() {
+        const deleteIndex = Math.floor(Math.random() * this.numBlocks);
+
+        let iterator = this.blocks.getIterator(this.blocks.last);
+
+        while (iterator.current) {
+            if (iterator.index === deleteIndex) {
+                this.blocks.remove(iterator.currentItem);
+                this.blocks.unshift(this.createBlock(0));
+            }
+
+            iterator.current.x = iterator.index * this.blockWidth;
+            this.ctx.fillStyle = iterator.current.color;
+            this.ctx.fillRect(iterator.current.x, iterator.current.y, this.blockWidth, this.blockHeight);
+
+            iterator.prev();
+        }
+    }
+}
+
+class FPSCounter {
+    constructor(ctx) {
+        this.ctx = ctx;
+        this.fps = 0;
+        this.framesThisSecond = 0;
+        this.lastFpsUpdate = Date.now();
+    }
+
+    update() {
+        this.framesThisSecond++;
+        const now = Date.now();
+        if (now - this.lastFpsUpdate >= 1000) {
+            this.fps = this.framesThisSecond;
+            this.framesThisSecond = 0;
+            this.lastFpsUpdate = now;
+        }
+    }
+
+    render() {
+        this.update();
+        this.ctx.fillStyle = "black";
+        this.ctx.fillText(`FPS: ${this.fps}`, 10, 10);
+    }
+}
+
+const numRows = 500;
+const canvas = document.getElementById('canvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const ctx = canvas.getContext('2d');
+const headerHeight = 20;
+const numBlocksPerRow = 100;
+const blockWidth = canvas.width / numBlocksPerRow;
+const blockHeight = 5;
+canvas.height = numRows * (blockHeight + 1) + headerHeight;
+
+let rows = [];
+for (let i = 0; i < numRows; i++) {
+    rows.push(new BlockRow(ctx, i * (blockHeight + 1) + headerHeight, numBlocksPerRow, blockWidth, blockHeight));
+}
+
+const fpsCounter = new FPSCounter(ctx);
+
+function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    fpsCounter.render();
+    rows.forEach(row => row.render());
+}
+
+setInterval(loop, 0);
+</script>
+</body>
+</html>
+
