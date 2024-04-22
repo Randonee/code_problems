@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Collision Simulation</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+    }
+    canvas {
+        display: block;
+        margin: auto;
+        background-color: #f0f0f0;
+    }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let square = {
+    x: 50,
+    y: canvas.height / 2 - 25,
+    width: 50,
+    height: 50,
+    vx: 0,
+    vy: 0,
+    speed: 50,
+    m: 10
+};
+
+let circle = {
+    x: canvas.width - 150,
+    y: canvas.height / 2,
+    radius: 100,
+    vx: -200,
+    vy: 0,
+    m: 100
+};
+
+let lastTime = 0;
+let keysPressed = {};
+
+function drawSquare() {
+    ctx.fillStyle = 'red';
+    ctx.fillRect(square.x, square.y, square.width, square.height);
+}
+
+function drawCircle() {
+    ctx.fillStyle = 'blue';
+    ctx.beginPath();
+    ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function calculateCollisionResponse(v1x, v2x, v1y, v2y, m1, m2) {
+    let v1xFinal = ((m1 - m2) * v1x + 2 * m2 * v2x) / (m1 + m2);
+    let v1yFinal = ((m1 - m2) * v1y + 2 * m2 * v2y) / (m1 + m2);
+    let v2xFinal = ((m2 - m1) * v2x + 2 * m1 * v1x) / (m1 + m2);
+    let v2yFinal = ((m2 - m1) * v2y + 2 * m1 * v1y) / (m1 + m2);
+    return [v1xFinal, v1yFinal, v2xFinal, v2yFinal];
+}
+
+function update(time) {
+    let deltaTime = (time - lastTime) / 1000;
+    lastTime = time;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawSquare();
+    drawCircle();
+
+    if (keysPressed['ArrowLeft']) square.vx -= square.speed;
+    if (keysPressed['ArrowRight']) square.vx += square.speed;
+    if (keysPressed['ArrowUp']) square.vy -= square.speed;
+    if (keysPressed['ArrowDown']) square.vy += square.speed;
+
+    square.x += square.vx * deltaTime;
+    square.y += square.vy * deltaTime;
+    circle.x += circle.vx * deltaTime;
+    circle.y += circle.vy * deltaTime;
+
+    if (square.x < 0) square.x = 0;
+    if (square.y < 0) square.y = 0;
+    if (square.x + square.width > canvas.width) square.x = canvas.width - square.width;
+    if (square.y + square.height > canvas.height) square.y = canvas.height - square.height;
+
+    let dx = circle.x - (square.x + square.width / 2);
+    let dy = circle.y - (square.y + square.height / 2);
+    let distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < square.width / 2 + circle.radius) {
+        const [x1, y1, x2, y2] = calculateCollisionResponse(square.vx, circle.vx, square.vy, circle.vy, square.m, circle.m);
+        square.vx = x1;
+        square.vy = y1;
+        circle.vx = x2;
+        circle.vy = y2;
+    }
+
+    requestAnimationFrame(update);
+}
+
+document.addEventListener('keydown', function(event) {
+    keysPressed[event.key] = true;
+});
+
+document.addEventListener('keyup', function(event) {
+    delete keysPressed[event.key];
+});
+
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
